@@ -95,15 +95,51 @@ async def emotion(ctx, *, args=None):
 async def move(ctx):
     ''' move the bot to the voice channel you are in '''
 
-
+    # check first if the user is in a voice channel
     if ctx.author.voice is None:
         await ctx.send("You are not in a voice channel!")
+        return
+
+    channel = ctx.author.voice.channel
+
+    # check if voice client already exists
+    if ctx.voice_client is None:
+        await channel.connect()
     else:
-        channel = ctx.author.voice.channel
-        await ctx.voice_client.connect(cls=discord.VoiceClient)
-        await ctx.author.voice.channel.connect()
+        await ctx.voice_client.move_to(channel)
 
+@bot.command()
+async def record(ctx):
+    # first, try joining the voice channel
+    await move(ctx)
 
+    # check if the bot is already recording
+    if ctx.voice_client.is_recording():
+        await ctx.send("Already recording!")
+        return
+
+    # start recording
+    ctx.voice_client.start_recording("recording.wav")
+
+@bot.command()
+async def stop(ctx):
+    # check if the bot is recording
+    if not ctx.voice_client.is_recording():
+        await ctx.send("Not recording!")
+        return
+
+    # stop recording
+    ctx.voice_client.stop_recording()
+
+    # save the recording
+    ctx.voice_client.save_recording("recording.wav")
+
+    # disconnect from the voice channel
+    await ctx.voice_client.disconnect()
+
+    # TODO: show a menu for the user to choose what to do with the recording
+    # await ctx.send("Recording saved! What would you like to do with it?")
+    # await ctx.send("1. Play the recording\n2. Summarize the recording\n3. Identify the emotion of the recording")
 
 # run the bot!
 bot.run(TOKEN)
