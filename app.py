@@ -25,7 +25,7 @@ co = cohere.Client(API_KEY)
 async def generate(message):
     print("message:", message)
     if len(message) < 250:
-        await ctx.send("Must be longer than 250 characters!")
+        return "Must be longer than 250 characters!"
     else:
         return await generate_long(message)
 
