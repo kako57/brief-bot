@@ -24,26 +24,26 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 co = cohere.Client(API_KEY)
 
 # cohere functions
-async def generate(message):
+def generate(message):
     print("message:", message)
     if len(message) < 250:
         return "Must be longer than 250 characters!"
     else:
-        return await generate_long(message)
+        return generate_long(message)
 
-async def generate_short(message):
+def generate_short(message):
     response = co.summarize(
         text=message,
         length='auto',
         format='auto',
         model='summarize-medium',
         additional_command='',
-        temperature=0.3,
+        temperature=0.5,
     )
     print("response:", response.summary)
     return response.summary
 
-async def generate_long(message):
+def generate_long(message):
     print("message:", message)
     response = co.summarize(
         text=message,
@@ -51,7 +51,7 @@ async def generate_long(message):
         format='auto',
         model='summarize-xlarge',
         additional_command='',
-        temperature=0.3,
+        temperature=0.5,
     )
     print("response:", response.summary)
     return response.summary
@@ -71,7 +71,7 @@ async def rundown_helper(ctx, num):
         input += msg.author.name.strip() + ': "' + msg.content.strip() + '"\n'
     print(input)
 
-    response = await generate(input)
+    response = generate(input)
     return response
 
 # bot commands
@@ -87,7 +87,7 @@ async def commands(ctx):
 
 @bot.command()
 async def summarize(ctx, *, args=None):
-    response = await generate("".join(args))
+    response = generate("".join(args))
     await ctx.send(response)
 
 @bot.command()
