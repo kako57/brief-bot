@@ -83,6 +83,16 @@ def identify_emotion(message):
     )
     return response.classifications[0].prediction.capitalize() + "!"
 
+def identify_emotion_v2(message):
+    if message is None:
+        return "Format: !emotion <message>"
+    response = co.classify(
+        model='5092799e-cf8d-4129-b81f-04417e54d3b2-ft',
+        inputs=[message]
+    )
+    dict = {0:'Sadness!', 1:'Joy!', 2:'Love!', 3:'Anger!', 4:'Fear!'}
+    return dict.get(int(response.classifications[0].prediction))
+
 @bot.event
 async def on_ready():
     activity = discord.Game(name="!commands", type=3)
@@ -97,7 +107,7 @@ async def ping(ctx):
 @bot.command()
 async def commands(ctx):
     await ctx.send('''
-    **SUPPORTED COMMANDS**\n!ping: Play pingpong with BriefBot.\n\n!commands: Shows commands (this message).\n\n!summarize <message>: Summarizes **<message>**. Only supports messages of length greater than 250.\n\n!rundown <number>: Summarizes the last **<number>** messages in this channel. Only supports long conversations.\n\n!emotion <message>: Attempts to classify the emotion of <message>.
+    **SUPPORTED COMMANDS**\n!ping: Play pingpong with BriefBot.\n\n!commands: Shows commands (this message).\n\n!summarize <message>: Summarizes **<message>**. Only supports messages of length greater than 250.\n\n!rundown <number>: Summarizes the last **<number>** messages in this channel. Only supports long conversations.\n\n!emotion <message>: Attempts to classify the emotion of **<message>**.
     ''')
 
 @bot.command()
@@ -133,7 +143,7 @@ async def rundown(ctx, *, args=None):
 
 @bot.command()
 async def emotion(ctx, *, args=None):
-    response = identify_emotion("".join(args))
+    response = identify_emotion_v2("".join(args))
     await ctx.send(response)
 
 # run the bot!
