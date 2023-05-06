@@ -1,4 +1,11 @@
+# imports
+import os
+from dotenv import load_dotenv
+
 import cohere
+
+load_dotenv()
+API_KEY = os.getenv('API_KEY')
 
 # setting up cohere client
 co = cohere.Client(API_KEY)
