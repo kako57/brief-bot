@@ -74,6 +74,12 @@ async def rundown_helper(ctx, num):
     response = generate(input)
     return response
 
+@bot.event
+async def on_ready():
+    activity = discord.Game(name="!commands", type=3)
+    await bot.change_presence(status=discord.Status.online, activity=activity)
+    print("Bot is ready!")
+
 # bot commands
 @bot.command()
 async def ping(ctx):
