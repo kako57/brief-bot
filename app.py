@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 
-import cohere
+from cohere_functions import generate, identify_emotion
 
 import traceback
 
@@ -20,42 +20,6 @@ intents.message_content = True
 # client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-# setting up cohere client
-co = cohere.Client(API_KEY)
-
-# cohere functions
-def generate(message):
-    print("message:", message)
-    if len(message) < 250:
-        return "Must be longer than 250 characters!"
-    else:
-        return generate_long(message)
-
-def generate_short(message):
-    response = co.summarize(
-        text=message,
-        length='auto',
-        format='auto',
-        model='summarize-medium',
-        additional_command='',
-        temperature=0.5,
-    )
-    print("response:", response.summary)
-    return response.summary
-
-def generate_long(message):
-    print("message:", message)
-    response = co.summarize(
-        text=message,
-        length='auto',
-        format='auto',
-        model='summarize-xlarge',
-        additional_command='',
-        temperature=0.5,
-    )
-    print("response:", response.summary)
-    return response.summary
-
 async def rundown_helper(ctx, num):
     messages = []
     input = ""
@@ -65,7 +29,7 @@ async def rundown_helper(ctx, num):
         messages.insert(0, msg)
 
     # ignore the command call itself
-    messages.pop(-1)
+    messages.pop()
 
     for msg in messages:
         input += msg.author.name.strip() + ': "' + msg.content.strip() + '"\n'
@@ -73,15 +37,6 @@ async def rundown_helper(ctx, num):
 
     response = generate(input)
     return response
-
-def identify_emotion(message):
-    if message is None:
-        return "Format: !emotion <message>"
-    response = co.classify(
-        model='96ad5ed9-d43a-49e7-b0da-79d5b2c9555d-ft',
-        inputs=[message]
-    )
-    return response.classifications[0].prediction.capitalize() + "!"
 
 @bot.event
 async def on_ready():
@@ -135,6 +90,20 @@ async def rundown(ctx, *, args=None):
 async def emotion(ctx, *, args=None):
     response = identify_emotion("".join(args))
     await ctx.send(response)
+
+@bot.command()
+async def move(ctx):
+    ''' move the bot to the voice channel you are in '''
+
+
+    if ctx.author.voice is None:
+        await ctx.send("You are not in a voice channel!")
+    else:
+        channel = ctx.author.voice.channel
+        await ctx.voice_client.connect(cls=discord.VoiceClient)
+        await ctx.author.voice.channel.connect()
+
+
 
 # run the bot!
 bot.run(TOKEN)
