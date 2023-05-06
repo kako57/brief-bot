@@ -27,7 +27,7 @@ async def generate(message):
     if len(message) < 250:
         await ctx.send("Must be longer than 250 characters!")
     else:
-        return await generate_short(message)
+        return await generate_long(message)
 
 async def generate_short(message):
     response = co.summarize(
@@ -61,7 +61,7 @@ async def ping(ctx):
 
 @bot.command()
 async def summarize(ctx, *, args=None):
-    response = await generate(" ".join(args))
+    response = await generate("".join(args))
     await ctx.send(response)
 
 # run the bot!
