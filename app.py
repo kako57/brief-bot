@@ -60,7 +60,7 @@ async def ping(ctx):
     await ctx.send("Pong!")
 
 @bot.command()
-async def summarize(ctx, *args):
+async def summarize(ctx, *, args=None):
     response = await generate(" ".join(args))
     await ctx.send(response)
 
