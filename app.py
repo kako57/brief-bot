@@ -51,7 +51,12 @@ async def ping(ctx):
 @bot.command()
 async def commands(ctx):
     await ctx.send('''
-    **SUPPORTED COMMANDS**\n!ping: Play pingpong with BriefBot.\n\n!commands: Shows commands (this message).\n\n!summarize <message>: Summarizes **<message>**. Only supports messages of length greater than 250.\n\n!rundown <number>: Summarizes the last **<number>** messages in this channel. Only supports long conversations.\n\n!emotion <message>: Attempts to classify the emotion of **<message>**.
+    **SUPPORTED COMMANDS**\n!ping: Play pingpong with BriefBot.\n\n!commands: 
+    \\Shows commands (this message).\n\n!summarize <message>: Summarizes **<message>**. 
+    \\Only supports messages of length greater than 250.\n\n!rundown <number>: 
+    \\Summarizes the last **<number>** messages in this channel. 
+    \\Only supports long conversations.\n\n!emotion <message>: 
+    \\Attempts to classify the emotion of **<message>**.
     ''')
 
 @bot.command()
