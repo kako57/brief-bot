@@ -4,15 +4,15 @@ from dotenv import load_dotenv
 
 import discord
 from discord.ext import commands
+from discord.ext.audiorec import NativeVoiceClient
 
-from cohere_functions import generate, identify_emotion
+from cohere_functions import generate, identify_emotion_v2
 
 import traceback
 
 # loading .env
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
-API_KEY = os.getenv('API_KEY')
 
 # setting up discord client
 intents = discord.Intents.default()
@@ -108,38 +108,38 @@ async def move(ctx):
     else:
         await ctx.voice_client.move_to(channel)
 
-@bot.command()
-async def record(ctx):
-    # first, try joining the voice channel
-    await move(ctx)
+# @bot.command()
+# async def record(ctx):
+#     # first, try joining the voice channel
+#     await move(ctx)
 
-    # check if the bot is already recording
-    if ctx.voice_client.is_recording():
-        await ctx.send("Already recording!")
-        return
+#     # check if the bot is already recording
+#     if ctx.voice_client.is_recording():
+#         await ctx.send("Already recording!")
+#         return
 
-    # start recording
-    ctx.voice_client.start_recording("recording.wav")
+#     # start recording
+#     ctx.voice_client.start_recording("recording.wav")
 
-@bot.command()
-async def stop(ctx):
-    # check if the bot is recording
-    if not ctx.voice_client.is_recording():
-        await ctx.send("Not recording!")
-        return
+# @bot.command()
+# async def stop(ctx):
+#     # check if the bot is recording
+#     if not ctx.voice_client.is_recording():
+#         await ctx.send("Not recording!")
+#         return
 
-    # stop recording
-    ctx.voice_client.stop_recording()
+#     # stop recording
+#     ctx.voice_client.stop_recording()
 
-    # save the recording
-    ctx.voice_client.save_recording("recording.wav")
+#     # save the recording
+#     ctx.voice_client.save_recording("recording.wav")
 
-    # disconnect from the voice channel
-    await ctx.voice_client.disconnect()
+#     # disconnect from the voice channel
+#     await ctx.voice_client.disconnect()
 
-    # TODO: show a menu for the user to choose what to do with the recording
-    # await ctx.send("Recording saved! What would you like to do with it?")
-    # await ctx.send("1. Play the recording\n2. Summarize the recording\n3. Identify the emotion of the recording")
+#     # TODO: show a menu for the user to choose what to do with the recording
+#     # await ctx.send("Recording saved! What would you like to do with it?")
+#     # await ctx.send("1. Play the recording\n2. Summarize the recording\n3. Identify the emotion of the recording")
 
 # run the bot!
 bot.run(TOKEN)
