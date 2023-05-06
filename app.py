@@ -4,57 +4,21 @@ from dotenv import load_dotenv
 
 import discord
 from discord.ext import commands
+from discord.ext.audiorec import NativeVoiceClient
 
-import cohere
+from cohere_functions import generate, identify_emotion_v2
 
 import traceback
 
 # loading .env
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
-API_KEY = os.getenv('API_KEY')
 
 # setting up discord client
 intents = discord.Intents.default()
 intents.message_content = True
 # client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='!', intents=intents)
-
-# setting up cohere client
-co = cohere.Client(API_KEY)
-
-# cohere functions
-def generate(message):
-    print("message:", message)
-    if len(message) < 250:
-        return "Must be longer than 250 characters!"
-    else:
-        return generate_long(message)
-
-def generate_short(message):
-    response = co.summarize(
-        text=message,
-        length='auto',
-        format='auto',
-        model='summarize-medium',
-        additional_command='',
-        temperature=0.5,
-    )
-    print("response:", response.summary)
-    return response.summary
-
-def generate_long(message):
-    print("message:", message)
-    response = co.summarize(
-        text=message,
-        length='auto',
-        format='auto',
-        model='summarize-xlarge',
-        additional_command='',
-        temperature=0.5,
-    )
-    print("response:", response.summary)
-    return response.summary
 
 async def rundown_helper(ctx, num):
     messages = []
@@ -65,7 +29,7 @@ async def rundown_helper(ctx, num):
         messages.insert(0, msg)
 
     # ignore the command call itself
-    messages.pop(-1)
+    messages.pop()
 
     for msg in messages:
         input += msg.author.name.strip() + ': "' + msg.content.strip() + '"\n'
@@ -73,25 +37,6 @@ async def rundown_helper(ctx, num):
 
     response = generate(input)
     return response
-
-def identify_emotion(message):
-    if message is None:
-        return "Format: !emotion <message>"
-    response = co.classify(
-        model='96ad5ed9-d43a-49e7-b0da-79d5b2c9555d-ft',
-        inputs=[message]
-    )
-    return response.classifications[0].prediction.capitalize() + "!"
-
-def identify_emotion_v2(message):
-    if message is None:
-        return "Format: !emotion <message>"
-    response = co.classify(
-        model='5092799e-cf8d-4129-b81f-04417e54d3b2-ft',
-        inputs=[message]
-    )
-    dict = {0:'Sadness!', 1:'Joy!', 2:'Love!', 3:'Anger!', 4:'Fear!'}
-    return dict.get(int(response.classifications[0].prediction))
 
 @bot.event
 async def on_ready():
@@ -145,6 +90,56 @@ async def rundown(ctx, *, args=None):
 async def emotion(ctx, *, args=None):
     response = identify_emotion_v2("".join(args))
     await ctx.send(response)
+
+@bot.command()
+async def move(ctx):
+    ''' move the bot to the voice channel you are in '''
+
+    # check first if the user is in a voice channel
+    if ctx.author.voice is None:
+        await ctx.send("You are not in a voice channel!")
+        return
+
+    channel = ctx.author.voice.channel
+
+    # check if voice client already exists
+    if ctx.voice_client is None:
+        await channel.connect()
+    else:
+        await ctx.voice_client.move_to(channel)
+
+# @bot.command()
+# async def record(ctx):
+#     # first, try joining the voice channel
+#     await move(ctx)
+
+#     # check if the bot is already recording
+#     if ctx.voice_client.is_recording():
+#         await ctx.send("Already recording!")
+#         return
+
+#     # start recording
+#     ctx.voice_client.start_recording("recording.wav")
+
+# @bot.command()
+# async def stop(ctx):
+#     # check if the bot is recording
+#     if not ctx.voice_client.is_recording():
+#         await ctx.send("Not recording!")
+#         return
+
+#     # stop recording
+#     ctx.voice_client.stop_recording()
+
+#     # save the recording
+#     ctx.voice_client.save_recording("recording.wav")
+
+#     # disconnect from the voice channel
+#     await ctx.voice_client.disconnect()
+
+#     # TODO: show a menu for the user to choose what to do with the recording
+#     # await ctx.send("Recording saved! What would you like to do with it?")
+#     # await ctx.send("1. Play the recording\n2. Summarize the recording\n3. Identify the emotion of the recording")
 
 # run the bot!
 bot.run(TOKEN)
