@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 
 import discord
 from discord.ext import commands
-from discord.ext.audiorec import NativeVoiceClient
 
 from cohere_functions import generate, identify_emotion_v2
 

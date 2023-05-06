@@ -20,7 +20,6 @@ jobs:
         pip install pylint
         pip install python-dotenv
         pip install discord
-        pip install discord-ext-audiorec
         pip install cohere
     - name: Analysing the code with pylint
       run: |
