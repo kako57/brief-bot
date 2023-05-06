@@ -7,6 +7,8 @@ from discord.ext import commands
 
 import cohere
 
+import traceback
+
 # loading .env
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
@@ -54,6 +56,24 @@ async def generate_long(message):
     print("response:", response.summary)
     return response.summary
 
+async def rundown_helper(ctx, num):
+    messages = []
+    input = ""
+
+    # needs to be in chronological order
+    async for msg in ctx.channel.history(limit=num+1):
+        messages.append(msg)
+
+    # ignore the command call itself
+    messages.pop(0)
+
+    for msg in messages:
+        input += msg.author.name.strip() + ': "' + msg.content.strip() + '"\n'
+    print(input)
+
+    response = await generate(input)
+    return response
+
 # bot commands
 @bot.command()
 async def ping(ctx):
@@ -62,6 +82,32 @@ async def ping(ctx):
 @bot.command()
 async def summarize(ctx, *, args=None):
     response = await generate("".join(args))
+    await ctx.send(response)
+
+@bot.command()
+async def rundown(ctx, *, args=None):
+    print("rundown args:", args)
+    if args is None:
+        print("No args provided")
+        response = "Format: !rundown <number>"
+    else:
+        args_split = args.split(" ")
+        if len(args_split) > 1:
+            print("Too many args:", len(args_split))
+            response = "Format: !rundown <number>"
+        else:
+            try:
+                print("args_split[0]:", args_split[0])
+                num = int(args_split[0].strip())
+                if num > 100:
+                    response = "That's quite a lot of messages! :astonished:\nMax is 100."
+                else:
+                    response = await rundown_helper(ctx, num)
+            except ValueError:
+                response = "Format: !rundown <number>"
+            except:
+                response = "Something went wrong!"
+                traceback.print_exc()
     await ctx.send(response)
 
 # run the bot!
