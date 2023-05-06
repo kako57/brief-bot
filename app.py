@@ -62,10 +62,10 @@ async def rundown_helper(ctx, num):
 
     # needs to be in chronological order
     async for msg in ctx.channel.history(limit=num+1):
-        messages.append(msg)
+        messages.insert(0, msg)
 
     # ignore the command call itself
-    messages.pop(0)
+    messages.pop(-1)
 
     for msg in messages:
         input += msg.author.name.strip() + ': "' + msg.content.strip() + '"\n'
