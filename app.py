@@ -1,5 +1,35 @@
+"""
+Main module for the BriefBot discord app
+
+Imports
+-------
+os                  : operating system calls
+traceback           : error handling and calls
+dotenv              : environment variables
+discord             : discord library for development
+discord.ext         : discord commands
+cohere_functions    : module for cohere functions
+
+Functions:
+----------
+rundown_helper      : Returns a summary paragraph relating to messages parsed by cohere
+on_ready            : Readies the bot to receive commands from users
+
+Bot Commands:
+-------------
+ping                : Returns a string pong when user gives command
+commands            : Returns a list of commands that the user can execute
+summarize           : Sends a summary message in dicord containing a summary of messages
+                      parsed by cohere
+rundown             : Returns a summary paragraph relating to messages parsed by cohere
+                      or an error message if given an incorrect input
+emotion             : Returns an emotion based on the messages parsed by cohere
+move                : Moves the bot to the call that the user is currently in
+"""
+
 # imports
 import os
+import traceback
 from dotenv import load_dotenv
 
 import discord
@@ -9,8 +39,6 @@ import discord.voice_client
 import discord.sinks
 
 import traceback
-
-# from pydub import AudioSegment
 
 from cohere_functions import generate, identify_emotion_v2
 from ntranscribe import transcribe
@@ -29,6 +57,21 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 connections = {}
 
 async def rundown_helper(ctx, num):
+    """
+    Returns a summary paragraph relating to messages parsed by cohere
+
+    Parameters
+    ----------
+    ctx : context
+        context of command, contains metadata including message history
+    num : int
+        number of messages to parse through
+
+    Returns
+    -------
+    str
+        summary of parsed messages
+    """
     messages = []
     input = ""
 
@@ -48,6 +91,9 @@ async def rundown_helper(ctx, num):
 
 @bot.event
 async def on_ready():
+    """
+    Readies the bot to receive commands from users
+    """
     activity = discord.Game(name="!commands", type=3)
     await bot.change_presence(status=discord.Status.online, activity=activity)
     print("Bot is ready!")
@@ -55,11 +101,17 @@ async def on_ready():
 # bot commands
 @bot.command()
 async def ping(ctx):
+    """
+    Returns a string pong when user gives command
+    """
     await ctx.send("Pong!")
 
 
 @bot.command()
 async def commands(ctx):
+    """
+    Returns a list of commands that the user can execute
+    """
     await ctx.send('''
     **SUPPORTED COMMANDS**\n!ping: Play pingpong with BriefBot.\n\n!commands: 
     \\Shows commands (this message).\n\n!summarize <message>: Summarizes **<message>**. 
@@ -71,11 +123,41 @@ async def commands(ctx):
 
 @bot.command()
 async def summarize(ctx, *, args=None):
+    """
+    Sends a summary message in dicord containing a summary of messages parsed
+    by cohere
+
+    Parameters
+    ----------
+    ctx : context
+        context of command, includes original message call to command
+
+    Returns
+    -------
+    str
+        summary of parsed messages
+    """
     response = generate("".join(args))
     await ctx.send(response)
 
 @bot.command()
 async def rundown(ctx, *, args=None):
+    """
+    Returns a summary paragraph relating to messages parsed by cohere
+    or an error message if given an incorrect input
+
+    Parameters
+    ----------
+    ctx : context
+        context of command, contains metadata of command call
+    args : list[str]
+        list of arguments provided by the user
+
+    Returns
+    -------
+    str
+        summary of parsed messages or error message based on error type
+    """
     print("rundown args:", args)
     if args is None:
         print("No args provided")
@@ -102,37 +184,44 @@ async def rundown(ctx, *, args=None):
 
 @bot.command()
 async def emotion(ctx, *, args=None):
+    """
+    Returns an emotion based on the messages parsed by cohere
+
+    Parameters
+    ----------
+    ctx : context
+        context of command, contains metadata of command call
+    args : list[str]
+        list of arguments provided by the user
+
+    Returns
+    -------
+    str
+        an emotion
+    """
     response = identify_emotion_v2("".join(args))
     await ctx.send(response)
 
-@bot.command()
-async def move(ctx):
-    ''' move the bot to the voice channel you are in '''
-
-    # check first if the user is in a voice channel
-    if ctx.author.voice is None:
-        await ctx.send("You are not in a voice channel!")
-        return
-
-    channel = ctx.author.voice.channel
-
-    # check if voice client already exists
-    if ctx.voice_client is None:
-        await channel.connect()
-    else:
-        await ctx.voice_client.move_to(channel)
-
-@bot.command()
-async def leave(ctx):
-    ''' leave the voice channel '''
-    await ctx.voice_client.disconnect()
-
-# callback function after recording has finished
 async def after_record(sink, channel, *args):
-    recorded_users = [
-        f"<@{user_id}>"
-        for user_id, _ in sink.audio_data.items()
-    ]
+    """
+    Callback function after recording has finished
+
+    It will disconnect the bot from the voice channel and transcribe the audio
+    file for each user in the channel during the recording
+
+    Parameters
+    ----------
+    sink : discord.sinks.Sink
+        sink object that contains the audio data
+    channel : discord.VoiceChannel
+        voice channel that the bot is connected to
+    *args : list
+        list of arguments
+    
+    Returns
+    -------
+    None
+    """
 
     await sink.vc.disconnect()
 
@@ -165,13 +254,20 @@ async def after_record(sink, channel, *args):
     for transcript in transcripts:
         await channel.send(transcript)
 
-    # await channel.send(
-    #     f"finished recording audio for: {', '.join(recorded_users)}.",
-    #     files=files
-    # )  # Send a message with the accumulated files.
-
 @bot.command()
 async def record(ctx):
+    """
+    Records the audio of users in the voice channel that the user is in
+
+    Parameters
+    ----------
+    ctx : context
+
+    Returns
+    -------
+    None
+    """
+
     voice = ctx.author.voice
 
     if not voice:
@@ -192,6 +288,19 @@ async def record(ctx):
 
 @bot.command()
 async def stop(ctx):
+    """
+    Stops the recording of the bot
+    Triggers the callback function after_record to transcribe the audio file
+
+    Parameters
+    ----------
+    ctx : context
+
+    Returns
+    -------
+    None
+    """
+
     if ctx.guild.id in connections:
         vc = connections[ctx.guild.id]
         vc.stop_recording()
