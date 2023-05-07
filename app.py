@@ -1,3 +1,32 @@
+"""
+Main module for the BriefBot discord app
+
+Imports
+-------
+os                  : operating system calls
+traceback           : error handling and calls
+dotenv              : environment variables
+discord             : discord library for development
+discord.ext         : discord commands
+cohere_functions    : module for cohere functions
+
+Functions:
+----------
+rundown_helper      : Returns a summary paragraph relating to messages parsed by cohere
+on_ready            : Readies the bot to receive commands from users
+
+Bot Commands:
+-------------
+ping                : Returns a string pong when user gives command
+commands            : Returns a list of commands that the user can execute
+summarize           : Sends a summary message in dicord containing a summary of messages
+                      parsed by cohere
+rundown             : Returns a summary paragraph relating to messages parsed by cohere
+                      or an error message if given an incorrect input
+emotion             : Returns an emotion based on the messages parsed by cohere
+move                : Moves the bot to the call that the user is currently in
+"""
+
 # imports
 import os
 import traceback
