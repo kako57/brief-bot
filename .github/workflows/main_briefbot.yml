@@ -31,14 +31,12 @@ jobs:
           source venv/bin/activate
       
       - name: Install dependencies
-        run: pip install -r requirements.txt
-      
-      - name: Install ffmpeg
-        run: apt update -y && apt install -y ffmpeg
-      
-      - name: Ensure installing py-cord with voice support
-        run: pip install py-cord[voice]
-    
+        run: |
+          pip install -r requirements.txt
+          apt update -y
+          apt install -y ffmpeg
+          pip install py-cord[voice]
+
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
         id: deploy-to-webapp
