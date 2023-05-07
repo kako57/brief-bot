@@ -3,9 +3,20 @@
 import speech_recognition as sr
 
 def transcribe(audio_file):
-    r = sr.Recognizer()
+    """
+    Returns a transcription of an audio file
 
-    print("Recognizer init time: ", end - start)
+    Parameters
+    ----------
+    audio_file : audio_file
+        an audio file to be transcribed by speech recognition
+
+    Returns
+    -------
+    str
+        a transcription of the audio file
+    """
+    r = sr.Recognizer()
 
     with sr.AudioFile(audio_file) as source:
         audio = r.record(source)

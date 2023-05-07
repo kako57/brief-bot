@@ -29,8 +29,7 @@ def generate(message):
     print("message:", message)
     if len(message) < 250:
         return "Must be longer than 250 characters!"
-    else:
-        return generate_long(message)
+    return generate_long(message)
 
 def generate_short(message):
     """
