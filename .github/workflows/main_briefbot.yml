@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+      url: "https://briefbot.azurewebsites.net"
 
     steps:
       - uses: actions/checkout@v2
