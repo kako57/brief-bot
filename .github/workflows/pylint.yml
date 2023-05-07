@@ -21,6 +21,7 @@ jobs:
         pip install python-dotenv
         pip install discord
         pip install cohere
+        pip install speech_recognition
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py')

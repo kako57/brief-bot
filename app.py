@@ -1,13 +1,12 @@
 # imports
 import os
+import traceback
 from dotenv import load_dotenv
 
 import discord
 from discord.ext import commands
 
 from cohere_functions import generate, identify_emotion_v2
-
-import traceback
 
 # loading .env
 load_dotenv()
@@ -219,7 +218,7 @@ async def move(ctx):
 
 #     # TODO: show a menu for the user to choose what to do with the recording
 #     # await ctx.send("Recording saved! What would you like to do with it?")
-#     # await ctx.send("1. Play the recording\n2. Summarize the recording\n3. 
+#     # await ctx.send("1. Play the recording\n2. Summarize the recording\n3.
       #     Identify the emotion of the recording")
 
 # run the bot!
