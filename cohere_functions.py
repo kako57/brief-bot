@@ -145,5 +145,5 @@ def identify_emotion_v2(message):
         model='5092799e-cf8d-4129-b81f-04417e54d3b2-ft',
         inputs=[message]
     )
-    dict = {0:'Sadness!', 1:'Joy!', 2:'Love!', 3:'Anger!', 4:'Fear!'}
-    return dict.get(int(response.classifications[0].prediction))
+    emotions_dict = {0:'Sadness!', 1:'Joy!', 2:'Love!', 3:'Anger!', 4:'Fear!'}
+    return emotions_dict.get(int(response.classifications[0].prediction))

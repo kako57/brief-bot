@@ -29,7 +29,6 @@ move                : Moves the bot to the call that the user is currently in
 
 # imports
 import os
-import traceback
 from dotenv import load_dotenv
 
 import discord
@@ -51,7 +50,6 @@ TOKEN = os.getenv('BOT_TOKEN')
 # setting up discord client
 intents = discord.Intents.default()
 intents.message_content = True
-# client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 connections = {}
@@ -73,7 +71,7 @@ async def rundown_helper(ctx, num):
         summary of parsed messages
     """
     messages = []
-    input = ""
+    rundown_input = ""
 
     # needs to be in chronological order
     async for msg in ctx.channel.history(limit=num+1):
@@ -83,10 +81,10 @@ async def rundown_helper(ctx, num):
     messages.pop()
 
     for msg in messages:
-        input += msg.author.name.strip() + ': "' + msg.content.strip() + '"\n'
-    print(input)
+        rundown_input += msg.author.name.strip() + ': "' + msg.content.strip() + '"\n'
+    print(rundown_input)
 
-    response = generate(input)
+    response = generate(rundown_input)
     return response
 
 @bot.event
@@ -94,7 +92,7 @@ async def on_ready():
     """
     Readies the bot to receive commands from users
     """
-    activity = discord.Game(name="!commands", type=3)
+    activity = discord.Game(name="!help", type=3)
     await bot.change_presence(status=discord.Status.online, activity=activity)
     print("Bot is ready!")
 
@@ -106,20 +104,23 @@ async def ping(ctx):
     """
     await ctx.send("Pong!")
 
+bot.remove_command('help')
 
 @bot.command()
-async def commands(ctx):
+async def help(ctx):
     """
     Returns a list of commands that the user can execute
     """
-    await ctx.send('''
-    **SUPPORTED COMMANDS**\n!ping: Play pingpong with BriefBot.\n\n!commands: 
-    \\Shows commands (this message).\n\n!summarize <message>: Summarizes **<message>**. 
-    \\Only supports messages of length greater than 250.\n\n!rundown <number>: 
-    \\Summarizes the last **<number>** messages in this channel. 
-    \\Only supports long conversations.\n\n!emotion <message>: 
-    \\Attempts to classify the emotion of **<message>**.
-    ''')
+    await ctx.send(
+    "**SUPPORTED COMMANDS**\n" +
+    "!ping: Play pingpong with BriefBot.\n\n" +
+    "!help: Shows commands (this message).\n\n" +
+    "!summarize <message>: Summarizes **<message>**. " +
+    "Only supports messages of length greater than 250.\n\n" +
+    "!rundown <number>: Summarizes the last **<number>** messages in this channel. " +
+    "Only supports long conversations.\n\n!emotion <message>: " +
+    "Attempts to classify the emotion of **<message>**."
+    )
 
 @bot.command()
 async def summarize(ctx, *, args=None):
@@ -177,9 +178,6 @@ async def rundown(ctx, *, args=None):
                     response = await rundown_helper(ctx, num)
             except ValueError:
                 response = "Format: !rundown <number>"
-            except:
-                response = "Something went wrong!"
-                traceback.print_exc()
     await ctx.send(response)
 
 @bot.command()
