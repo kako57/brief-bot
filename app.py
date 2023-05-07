@@ -35,9 +35,6 @@ import discord
 from discord.ext import commands
 
 import discord.voice_client
-import discord.sinks
-
-import traceback
 
 from cohere_functions import generate, identify_emotion_v2
 from ntranscribe import transcribe
@@ -200,7 +197,7 @@ async def emotion(ctx, *, args=None):
     response = identify_emotion_v2("".join(args))
     await ctx.send(response)
 
-async def after_record(sink, channel, *args):
+async def after_record(sink, channel):
     """
     Callback function after recording has finished
 
@@ -233,9 +230,9 @@ async def after_record(sink, channel, *args):
         stereo = f"{user_id}-stereo.wav"
         mono = f"{user_id}.wav"
 
-        with open(stereo, "wb") as f:
-            print(f.name)
-            f.write(audio.file.read())
+        with open(stereo, "wb") as stereo_file:
+            print(stereo_file.name)
+            stereo_file.write(audio.file.read())
 
         # delete mono file if it exists
         if os.path.exists(mono):
@@ -272,11 +269,11 @@ async def record(ctx):
         await ctx.send("You are not in a voice channel!")
         return
 
-    vc = await voice.channel.connect()
+    voice_channel = await voice.channel.connect()
 
-    connections.update({ctx.guild.id: vc})
+    connections.update({ctx.guild.id: voice_channel})
 
-    vc.start_recording(
+    voice_channel.start_recording(
         discord.sinks.WaveSink(),
         after_record,
         ctx.channel
@@ -300,8 +297,8 @@ async def stop(ctx):
     """
 
     if ctx.guild.id in connections:
-        vc = connections[ctx.guild.id]
-        vc.stop_recording()
+        voice_channel = connections[ctx.guild.id]
+        voice_channel.stop_recording()
 
         del connections[ctx.guild.id]
 
