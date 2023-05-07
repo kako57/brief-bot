@@ -29,7 +29,6 @@ move                : Moves the bot to the call that the user is currently in
 
 # imports
 import os
-import traceback
 from dotenv import load_dotenv
 
 import discord
@@ -44,7 +43,6 @@ TOKEN = os.getenv('BOT_TOKEN')
 # setting up discord client
 intents = discord.Intents.default()
 intents.message_content = True
-# client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 async def rundown_helper(ctx, num):
@@ -64,7 +62,7 @@ async def rundown_helper(ctx, num):
         summary of parsed messages
     """
     messages = []
-    input = ""
+    rundown_input = ""
 
     # needs to be in chronological order
     async for msg in ctx.channel.history(limit=num+1):
@@ -74,10 +72,10 @@ async def rundown_helper(ctx, num):
     messages.pop()
 
     for msg in messages:
-        input += msg.author.name.strip() + ': "' + msg.content.strip() + '"\n'
-    print(input)
+        rundown_input += msg.author.name.strip() + ': "' + msg.content.strip() + '"\n'
+    print(rundown_input)
 
-    response = generate(input)
+    response = generate(rundown_input)
     return response
 
 @bot.event
@@ -85,7 +83,7 @@ async def on_ready():
     """
     Readies the bot to receive commands from users
     """
-    activity = discord.Game(name="!commands", type=3)
+    activity = discord.Game(name="!help", type=3)
     await bot.change_presence(status=discord.Status.online, activity=activity)
     print("Bot is ready!")
 
@@ -97,19 +95,23 @@ async def ping(ctx):
     """
     await ctx.send("Pong!")
 
+bot.remove_command('help')
+
 @bot.command()
-async def commands(ctx):
+async def help(ctx):
     """
     Returns a list of commands that the user can execute
     """
-    await ctx.send('''
-    **SUPPORTED COMMANDS**\n!ping: Play pingpong with BriefBot.\n\n!commands: 
-    \\Shows commands (this message).\n\n!summarize <message>: Summarizes **<message>**. 
-    \\Only supports messages of length greater than 250.\n\n!rundown <number>: 
-    \\Summarizes the last **<number>** messages in this channel. 
-    \\Only supports long conversations.\n\n!emotion <message>: 
-    \\Attempts to classify the emotion of **<message>**.
-    ''')
+    await ctx.send(
+    "**SUPPORTED COMMANDS**\n" +
+    "!ping: Play pingpong with BriefBot.\n\n" +
+    "!help: Shows commands (this message).\n\n" +
+    "!summarize <message>: Summarizes **<message>**. " +
+    "Only supports messages of length greater than 250.\n\n" +
+    "!rundown <number>: Summarizes the last **<number>** messages in this channel. " +
+    "Only supports long conversations.\n\n!emotion <message>: " +
+    "Attempts to classify the emotion of **<message>**."
+    )
 
 @bot.command()
 async def summarize(ctx, *, args=None):
@@ -167,9 +169,6 @@ async def rundown(ctx, *, args=None):
                     response = await rundown_helper(ctx, num)
             except ValueError:
                 response = "Format: !rundown <number>"
-            except:
-                response = "Something went wrong!"
-                traceback.print_exc()
     await ctx.send(response)
 
 @bot.command()
@@ -215,40 +214,6 @@ async def move(ctx):
         await channel.connect()
     else:
         await ctx.voice_client.move_to(channel)
-
-# @bot.command()
-# async def record(ctx):
-#     # first, try joining the voice channel
-#     await move(ctx)
-
-#     # check if the bot is already recording
-#     if ctx.voice_client.is_recording():
-#         await ctx.send("Already recording!")
-#         return
-
-#     # start recording
-#     ctx.voice_client.start_recording("recording.wav")
-
-# @bot.command()
-# async def stop(ctx):
-#     # check if the bot is recording
-#     if not ctx.voice_client.is_recording():
-#         await ctx.send("Not recording!")
-#         return
-
-#     # stop recording
-#     ctx.voice_client.stop_recording()
-
-#     # save the recording
-#     ctx.voice_client.save_recording("recording.wav")
-
-#     # disconnect from the voice channel
-#     await ctx.voice_client.disconnect()
-
-#     # TODO: show a menu for the user to choose what to do with the recording
-#     # await ctx.send("Recording saved! What would you like to do with it?")
-#     # await ctx.send("1. Play the recording\n2. Summarize the recording\n3.
-      #     Identify the emotion of the recording")
 
 # run the bot!
 bot.run(TOKEN)

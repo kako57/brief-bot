@@ -32,12 +32,9 @@ def transcribe(audio_file):
     str
         a transcription of the audio file
     """
-    r = sr.Recognizer()
+    recognizer = sr.Recognizer()
 
     with sr.AudioFile(audio_file) as source:
-        audio = r.record(source)
+        audio = recognizer.record(source)
 
-    return r.recognize_sphinx(audio)
-
-# if __name__  == "__main__":
-#     print(transcribe("english.wav"))
+    return recognizer.recognize_sphinx(audio)
