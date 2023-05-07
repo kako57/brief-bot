@@ -8,10 +8,11 @@ from discord.ext import commands
 import discord.voice_client
 import discord.sinks
 
-from cohere_functions import generate, identify_emotion_v2
-
 import traceback
 
+# from pydub import AudioSegment
+
+from cohere_functions import generate, identify_emotion_v2
 from ntranscribe import transcribe
 
 
@@ -140,23 +141,34 @@ async def after_record(sink, channel, *args):
     for user_id, audio in sink.audio_data.items():
         print(audio.file)
         files.append(discord.File(audio.file, f"{user_id}.{sink.encoding}"))
-        # audio.file.seek(0)
+
         # create a temporary wav file just so we can transcribe it
-        # TODO: convert to mono channel
-        filename = f"{user_id}.wav"
-        with open(filename, "wb") as f:
+        stereo = f"{user_id}-stereo.wav"
+        mono = f"{user_id}.wav"
+
+        with open(stereo, "wb") as f:
             print(f.name)
             f.write(audio.file.read())
-        transcripts.append(f'{user_id}:\n{transcribe(filename)}')
-        os.remove(filename)
+
+        # delete mono file if it exists
+        if os.path.exists(mono):
+            os.remove(mono)
+
+        # convert stereo to mono
+        # ffmpeg -i input.wav -ac 1 -y output.wav
+        os.system(f"ffmpeg -i {stereo} -ac 1 -y {mono}")
+
+        transcripts.append(f'<@{user_id}>:\n{transcribe(mono)}')
+        os.remove(stereo)
+        os.remove(mono)
 
     for transcript in transcripts:
         await channel.send(transcript)
 
-    await channel.send(
-        f"finished recording audio for: {', '.join(recorded_users)}.",
-        files=files
-    )  # Send a message with the accumulated files.
+    # await channel.send(
+    #     f"finished recording audio for: {', '.join(recorded_users)}.",
+    #     files=files
+    # )  # Send a message with the accumulated files.
 
 @bot.command()
 async def record(ctx):
