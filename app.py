@@ -103,8 +103,8 @@ async def ping(ctx):
 
 bot.remove_command('help')
 
-@bot.command()
-async def help(ctx):
+@bot.command('help')
+async def _help(ctx):
     """
     Returns a list of commands that the user can execute
     """
