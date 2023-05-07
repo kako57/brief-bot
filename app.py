@@ -34,7 +34,11 @@ from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 
+import discord.voice_client
+
 from cohere_functions import generate, identify_emotion_v2
+from ntranscribe import transcribe
+
 
 # loading .env
 load_dotenv()
@@ -44,6 +48,8 @@ TOKEN = os.getenv('BOT_TOKEN')
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+connections = {}
 
 async def rundown_helper(ctx, num):
     """
@@ -191,29 +197,114 @@ async def emotion(ctx, *, args=None):
     response = identify_emotion_v2("".join(args))
     await ctx.send(response)
 
-@bot.command()
-async def move(ctx):
+async def after_record(sink, channel):
     """
-    Moves the bot to the call that the user is currently in
+    Callback function after recording has finished
+
+    It will disconnect the bot from the voice channel and transcribe the audio
+    file for each user in the channel during the recording
+
+    Parameters
+    ----------
+    sink : discord.sinks.Sink
+        sink object that contains the audio data
+    channel : discord.VoiceChannel
+        voice channel that the bot is connected to
+    *args : list
+        list of arguments
+    
+    Returns
+    -------
+    None
+    """
+
+    await sink.vc.disconnect()
+
+    files = []
+    transcripts = []
+    for user_id, audio in sink.audio_data.items():
+        print(audio.file)
+        files.append(discord.File(audio.file, f"{user_id}.{sink.encoding}"))
+
+        # create a temporary wav file just so we can transcribe it
+        stereo = f"{user_id}-stereo.wav"
+        mono = f"{user_id}.wav"
+
+        with open(stereo, "wb") as stereo_file:
+            print(stereo_file.name)
+            stereo_file.write(audio.file.read())
+
+        # delete mono file if it exists
+        if os.path.exists(mono):
+            os.remove(mono)
+
+        # convert stereo to mono
+        # ffmpeg -i input.wav -ac 1 -y output.wav
+        os.system(f"ffmpeg -i {stereo} -ac 1 -y {mono}")
+
+        transcripts.append(f'<@{user_id}>:\n{transcribe(mono)}')
+        os.remove(stereo)
+        os.remove(mono)
+
+    for transcript in transcripts:
+        await channel.send(transcript)
+
+@bot.command()
+async def record(ctx):
+    """
+    Records the audio of users in the voice channel that the user is in
 
     Parameters
     ----------
     ctx : context
-        context of command, contains metadata of command call
+
+    Returns
+    -------
+    None
     """
 
-    # check first if the user is in a voice channel
-    if ctx.author.voice is None:
+    voice = ctx.author.voice
+
+    if not voice:
         await ctx.send("You are not in a voice channel!")
         return
 
-    channel = ctx.author.voice.channel
+    voice_channel = await voice.channel.connect()
 
-    # check if voice client already exists
-    if ctx.voice_client is None:
-        await channel.connect()
+    connections.update({ctx.guild.id: voice_channel})
+
+    voice_channel.start_recording(
+        discord.sinks.WaveSink(),
+        after_record,
+        ctx.channel
+    )
+
+    await ctx.send("Recording...")
+
+@bot.command()
+async def stop(ctx):
+    """
+    Stops the recording of the bot
+    Triggers the callback function after_record to transcribe the audio file
+
+    Parameters
+    ----------
+    ctx : context
+
+    Returns
+    -------
+    None
+    """
+
+    if ctx.guild.id in connections:
+        voice_channel = connections[ctx.guild.id]
+        voice_channel.stop_recording()
+
+        del connections[ctx.guild.id]
+
+        # await ctx.delete()
     else:
-        await ctx.voice_client.move_to(channel)
+        await ctx.respond("I am currently not recording here.")
 
 # run the bot!
 bot.run(TOKEN)
