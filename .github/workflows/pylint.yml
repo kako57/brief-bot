@@ -19,9 +19,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install pylint
         pip install python-dotenv
-        pip install discord
+        pip install py-cord[voice]
         pip install cohere
         pip install SpeechRecognition
+        pip install pocketsphinx
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py')
