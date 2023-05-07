@@ -1,3 +1,19 @@
+"""
+Module for audio transcription, helper module for app.py
+
+Imported By
+-----------
+app.py              : main module for the BriefBot discord app
+
+Imports
+-------
+SpeechRecognition   : Audio to text transcription
+
+Functions:
+----------
+transcribe          : Returns a transcription of an audio file
+"""
+
 #!/usr/bin/env python3
 
 import speech_recognition as sr
