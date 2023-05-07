@@ -5,9 +5,15 @@ from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 
+import discord.voice_client
+import discord.sinks
+
 from cohere_functions import generate, identify_emotion_v2
 
 import traceback
+
+from ntranscribe import transcribe
+
 
 # loading .env
 load_dotenv()
@@ -18,6 +24,8 @@ intents = discord.Intents.default()
 intents.message_content = True
 # client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+connections = {}
 
 async def rundown_helper(ctx, num):
     messages = []
@@ -48,11 +56,21 @@ async def on_ready():
 async def ping(ctx):
     await ctx.send("Pong!")
 
+
 @bot.command()
 async def commands(ctx):
-    await ctx.send('''
-    **SUPPORTED COMMANDS**\n!ping: Play pingpong with BriefBot.\n\n!commands: Shows commands (this message).\n\n!summarize <message>: Summarizes **<message>**. Only supports messages of length greater than 250.\n\n!rundown <number>: Summarizes the last **<number>** messages in this channel. Only supports long conversations.\n\n!emotion <message>: Attempts to classify the emotion of **<message>**.
-    ''')
+    response = '''**SUPPORTED COMMANDS**
+!ping: Play pingpong with BriefBot.
+
+!commands: Shows commands (this message).
+
+!summarize <message>: Summarizes **<message>**. Only supports messages of length greater than 250.
+
+!rundown <number>: Summarizes the last **<number>** messages in this channel. Only supports long conversations.
+
+!emotion <message>: Attempts to classify the emotion of **<message>**.
+    '''
+    await ctx.send(response)
 
 @bot.command()
 async def summarize(ctx, *, args=None):
@@ -107,38 +125,74 @@ async def move(ctx):
     else:
         await ctx.voice_client.move_to(channel)
 
-# @bot.command()
-# async def record(ctx):
-#     # first, try joining the voice channel
-#     await move(ctx)
+@bot.command()
+async def leave(ctx):
+    ''' leave the voice channel '''
+    await ctx.voice_client.disconnect()
 
-#     # check if the bot is already recording
-#     if ctx.voice_client.is_recording():
-#         await ctx.send("Already recording!")
-#         return
+# callback function after recording has finished
+async def after_record(sink, channel, *args):
+    recorded_users = [
+        f"<@{user_id}>"
+        for user_id, _ in sink.audio_data.items()
+    ]
 
-#     # start recording
-#     ctx.voice_client.start_recording("recording.wav")
+    await sink.vc.disconnect()
 
-# @bot.command()
-# async def stop(ctx):
-#     # check if the bot is recording
-#     if not ctx.voice_client.is_recording():
-#         await ctx.send("Not recording!")
-#         return
+    files = []
+    transcripts = []
+    for user_id, audio in sink.audio_data.items():
+        print(audio.file)
+        files.append(discord.File(audio.file, f"{user_id}.{sink.encoding}"))
+        # audio.file.seek(0)
+        # create a temporary wav file just so we can transcribe it
+        # TODO: convert to mono channel
+        filename = f"{user_id}.wav"
+        with open(filename, "wb") as f:
+            print(f.name)
+            f.write(audio.file.read())
+        transcripts.append(f'{user_id}:\n{transcribe(filename)}')
+        os.remove(filename)
 
-#     # stop recording
-#     ctx.voice_client.stop_recording()
+    for transcript in transcripts:
+        await channel.send(transcript)
 
-#     # save the recording
-#     ctx.voice_client.save_recording("recording.wav")
+    await channel.send(
+        f"finished recording audio for: {', '.join(recorded_users)}.",
+        files=files
+    )  # Send a message with the accumulated files.
 
-#     # disconnect from the voice channel
-#     await ctx.voice_client.disconnect()
+@bot.command()
+async def record(ctx):
+    voice = ctx.author.voice
 
-#     # TODO: show a menu for the user to choose what to do with the recording
-#     # await ctx.send("Recording saved! What would you like to do with it?")
-#     # await ctx.send("1. Play the recording\n2. Summarize the recording\n3. Identify the emotion of the recording")
+    if not voice:
+        await ctx.send("You are not in a voice channel!")
+        return
+
+    vc = await voice.channel.connect()
+
+    connections.update({ctx.guild.id: vc})
+
+    vc.start_recording(
+        discord.sinks.WaveSink(),
+        after_record,
+        ctx.channel
+    )
+
+    await ctx.send("Recording...")
+
+@bot.command()
+async def stop(ctx):
+    if ctx.guild.id in connections:
+        vc = connections[ctx.guild.id]
+        vc.stop_recording()
+
+        del connections[ctx.guild.id]
+
+        # await ctx.delete()
+    else:
+        await ctx.respond("I am currently not recording here.")
 
 # run the bot!
 bot.run(TOKEN)
