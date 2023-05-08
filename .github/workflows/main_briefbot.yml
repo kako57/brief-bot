@@ -17,6 +17,10 @@ jobs:
       name: 'Production'
       url: "https://briefbot.azurewebsites.net"
 
+    env:
+      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      API_KEY: ${{ secrets.API_KEY }}
+
     steps:
       - uses: actions/checkout@v2
 
@@ -35,6 +39,11 @@ jobs:
           pip install -r requirements.txt
           sudo apt update -y
           sudo apt install -y ffmpeg
+      
+      - name: Setting environment variables
+        run: |
+          echo BOT_TOKEN=${{ env.BOT_TOKEN }} >> .env
+          echo API_KEY=${{ env.API_KEY }} >> .env
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
